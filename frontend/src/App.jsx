@@ -133,6 +133,7 @@ const FloatingIcon = styled(motion.i)`
 
 const RoadComplaintsLogin = () => {
   const [activeForm, setActiveForm] = useState('officer');
+  const [activeAuthMode, setActiveAuthMode] = useState('login'); // 'login' or 'signup'
   const [theme, setTheme] = useState('default');
   const [floatingIcons, setFloatingIcons] = useState([]);
 
@@ -158,8 +159,12 @@ const RoadComplaintsLogin = () => {
     setActiveForm(form);
   };
 
-  const handleLogin = (type) => {
-    alert(`${type} login successful (demo)`);
+  const toggleAuthMode = () => {
+    setActiveAuthMode(activeAuthMode === 'login' ? 'signup' : 'login');
+  };
+
+  const handleAuth = (type) => {
+    alert(`${type} ${activeAuthMode} successful (demo)`);
   };
 
   return (
@@ -199,12 +204,16 @@ const RoadComplaintsLogin = () => {
         </LeftSection>
 
         <RightSection>
-          <h3>{activeForm === 'officer' ? 'Officer Login' : 'Citizen Login'}</h3>
+          <h3>{activeForm === 'officer' ? 'Officer' : 'Citizen'} {activeAuthMode === 'login' ? 'Login' : 'Sign Up'}</h3>
           <Input type="email" placeholder="Email" />
           <Input type="password" placeholder="Password" />
-          <Button onClick={() => handleLogin(activeForm)}>
-            Login as {activeForm.charAt(0).toUpperCase() + activeForm.slice(1)}
+          {activeAuthMode === 'signup' && <Input type="text" placeholder="Full Name" />}
+          <Button onClick={() => handleAuth(activeForm)}>
+            {activeAuthMode === 'login' ? 'Login' : 'Sign Up'} as {activeForm.charAt(0).toUpperCase() + activeForm.slice(1)}
           </Button>
+          <FormToggle onClick={toggleAuthMode}>
+            Switch to {activeAuthMode === 'login' ? 'Sign Up' : 'Login'}
+          </FormToggle>
         </RightSection>
       </Container>
     </ThemeProvider>
