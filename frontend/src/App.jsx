@@ -1,240 +1,251 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import './App.css';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
-const LoginPage = () => {
-  const [activeTab, setActiveTab] = useState('login');
-  const [userType, setUserType] = useState(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [shake, setShake] = useState(false);
+const OfficerDashboard = () => {
+  const [issues, setIssues] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    pending: 0,
+    inProgress: 0,
+    resolved: 0
+  });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!userType) {
-      setShake(true);
-      return;
+  // Color palette for the dashboard
+  const colors = {
+    bg: {
+      primary: '#0f172a',
+      card: '#1e293b',
+      accent: '#334155'
+    },
+    text: {
+      primary: '#f8fafc',
+      secondary: '#cbd5e1',
+      accent: '#38bdf8',
+      title: '#facc15'
+    },
+    status: {
+      pending: '#f97316',
+      inProgress: '#3b82f6',
+      resolved: '#10b981'
+    },
+    button: {
+      primary: '#3b82f6',
+      hover: '#2563eb'
     }
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
   };
 
+  // Chart colors
+  const CHART_COLORS = [colors.status.pending, colors.status.inProgress, colors.status.resolved];
+
   useEffect(() => {
-    if (shake) {
-      const timer = setTimeout(() => setShake(false), 500);
-      return () => clearTimeout(timer);
+    const initialIssues = [
+      {
+        _id: '1',
+        title: 'Pothole on Main Road',
+        reporterName: 'John Doe',
+        reporterEmail: 'john@example.com',
+        description: 'Large pothole causing traffic issues.',
+        status: 'Pending',
+      },
+      {
+        _id: '2',
+        title: 'Damaged Streetlight',
+        reporterName: 'Jane Smith',
+        reporterEmail: 'jane@example.com',
+        description: 'Streetlight not working on Elm Street.',
+        status: 'In Progress',
+      },
+      {
+        _id: '3',
+        title: 'Water Drainage Problem',
+        reporterName: 'Alex Brown',
+        reporterEmail: 'alex@example.com',
+        description: 'Water drainage blocked causing flooding.',
+        status: 'Pending',
+      },
+      {
+        _id: '4',
+        title: 'Broken Sidewalk',
+        reporterName: 'Emily Wilson',
+        reporterEmail: 'emily@example.com',
+        description: 'Sidewalk cracked and dangerous for pedestrians.',
+        status: 'Resolved',
+      },
+      {
+        _id: '5',
+        title: 'Missing Street Sign',
+        reporterName: 'Michael Johnson',
+        reporterEmail: 'michael@example.com',
+        description: 'Street name sign missing at Oak and Maple intersection.',
+        status: 'In Progress',
+      },
+    ];
+
+    setIssues(initialIssues);
+    updateStats(initialIssues);
+    setIsLoading(false);
+  }, []);
+
+  const updateStats = (issueList) => {
+    const newStats = {
+      pending: issueList.filter(i => i.status === 'Pending').length,
+      inProgress: issueList.filter(i => i.status === 'In Progress').length,
+      resolved: issueList.filter(i => i.status === 'Resolved').length
+    };
+    setStats(newStats);
+  };
+
+  const handleStatusChange = (id, newStatus) => {
+    const updatedIssues = issues.map((issue) =>
+      issue._id === id ? { ...issue, status: newStatus } : issue
+    );
+    setIssues(updatedIssues);
+    updateStats(updatedIssues);
+  };
+
+  const handleUpdateStatus = (id) => {
+    const issue = issues.find((issue) => issue._id === id);
+    if (issue.status === 'Resolved') {
+      // Optionally trigger email to user here
+      const filteredIssues = issues.filter((i) => i._id !== id);
+      setIssues(filteredIssues);
+      updateStats(filteredIssues);
     }
-  }, [shake]);
+  };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'Pending': return colors.status.pending;
+      case 'In Progress': return colors.status.inProgress;
+      case 'Resolved': return colors.status.resolved;
+      default: return colors.text.secondary;
+    }
+  };
+  
+  // Data for the pie chart
+  const chartData = [
+    { name: 'Pending', value: stats.pending },
+    { name: 'In Progress', value: stats.inProgress },
+    { name: 'Resolved', value: stats.resolved }
+  ];
 
   return (
-    <div className="login-container">
-      <div className="login-background">
-        {[...Array(10)].map((_, i) => {
-          const left = `${Math.random() * 100}%`;
-          const top = `${Math.random() * 100}%`;
-          const size = `${20 + Math.random() * 40}px`;
-          return (
-            <motion.div
-              key={i}
-              className="background-circle"
-              initial={{ y: -50, opacity: 0 }}
-              animate={{
-                y: [0, 20, -10, 20, 0],
-                x: [0, 10, -10, 5, 0],
-                opacity: [0.2, 0.5, 0.3],
-              }}
-              transition={{
-                duration: 10 + Math.random() * 10,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: Math.random() * 3,
-              }}
-              style={{
-                left,
-                top,
-                width: size,
-                height: size,
-                backgroundColor: i % 2 === 0 ? '#4f46e5' : '#10b981',
-              }}
-            />
-          );
-        })}
-      </div>
+    <div className="min-h-screen p-8 font-sans" style={{ backgroundColor: colors.bg.primary, color: colors.text.primary }}>
+      <h2 className="text-center text-4xl mb-8" style={{ color: colors.text.accent, textShadow: '0 0 5px #38bdf8' }}>
+        🚧 Officer Dashboard - Road Issue Reports
+      </h2>
 
-      <motion.div
-        className="login-card"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        <div className="logo-container">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-            style={{ originX: 0.5, originY: 0.5 }}
-          >
-            <svg className="logo-orbits" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="45" stroke="#e2e8f0" strokeWidth="1" fill="none" />
-              <circle cx="50" cy="50" r="35" stroke="#cbd5e1" strokeWidth="1" fill="none" />
-            </svg>
-          </motion.div>
-          <motion.h1
-            className="logo-text"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{
-              scale: {
-                duration: 2,
-                repeat: Infinity,
-                repeatType: 'reverse',
-                ease: 'easeInOut',
-              },
-            }}
-          >
-            CivicConnect
-          </motion.h1>
-        </div>
-
-        <div className="tabs">
-          <button
-            className={`tab ${activeTab === 'login' ? 'active' : ''}`}
-            onClick={() => setActiveTab('login')}
-          >
-            Login
-          </button>
-          <button
-            className={`tab ${activeTab === 'signup' ? 'active' : ''}`}
-            onClick={() => setActiveTab('signup')}
-          >
-            Sign Up
-          </button>
-        </div>
-
-        <motion.div
-          className={`role-selector ${shake ? 'shake' : ''}`}
-          animate={shake ? { x: [0, -10, 10, -5, 5, 0] } : {}}
-          transition={{ duration: 0.5 }}
-        >
-          <h3 className="role-title">I am a:</h3>
-          <div className="role-options">
-            {['citizen', 'officer'].map((type) => (
-              <motion.button
-                key={type}
-                className={`role-option ${userType === type ? 'selected' : ''}`}
-                onClick={() => setUserType(type)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <motion.div
-                  animate={{
-                    backgroundColor: userType === type ? (type === 'citizen' ? '#4f46e5' : '#10b981') : '#f1f5f9',
-                    color: userType === type ? 'white' : '#64748b',
-                  }}
-                  className="role-option-inner"
-                >
-                  <svg className="role-icon" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </motion.div>
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
-
-        <form onSubmit={handleSubmit}>
-          <AnimatePresence mode="wait">
-            {activeTab === 'signup' && (
-              <motion.div
-                key="signup"
-                initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -100 }}
-                transition={{ duration: 0.4 }}
-              >
-                <div className="input-group">
-                  <label htmlFor="name">Full Name</label>
-                  <input
-                    type="text"
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div className="input-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+      {isLoading ? (
+        <p className="text-center text-2xl" style={{ color: colors.text.primary }}>Loading...</p>
+      ) : (
+        <div className="max-w-6xl mx-auto">
+          {/* Analytics Section */}
+          <div className="mb-10 p-6 rounded-xl" style={{ backgroundColor: colors.bg.card, boxShadow: '0 0 15px rgba(56, 189, 248, 0.2)' }}>
+            <h3 className="text-2xl mb-4" style={{ color: colors.text.accent }}>Issue Analytics</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {/* Stats Cards */}
+              <div className="p-4 rounded-lg flex flex-col items-center justify-center" style={{ backgroundColor: colors.bg.accent }}>
+                <p className="text-lg" style={{ color: colors.text.secondary }}>Total Issues</p>
+                <p className="text-3xl font-bold" style={{ color: colors.text.primary }}>{issues.length}</p>
+              </div>
+              
+              <div className="p-4 rounded-lg flex flex-col items-center justify-center" style={{ backgroundColor: colors.bg.accent }}>
+                <p className="text-lg" style={{ color: colors.text.secondary }}>Pending</p>
+                <p className="text-3xl font-bold" style={{ color: colors.status.pending }}>{stats.pending}</p>
+              </div>
+              
+              <div className="p-4 rounded-lg flex flex-col items-center justify-center" style={{ backgroundColor: colors.bg.accent }}>
+                <p className="text-lg" style={{ color: colors.text.secondary }}>In Progress</p>
+                <p className="text-3xl font-bold" style={{ color: colors.status.inProgress }}>{stats.inProgress}</p>
+              </div>
+              
+              <div className="p-4 rounded-lg flex flex-col items-center justify-center" style={{ backgroundColor: colors.bg.accent }}>
+                <p className="text-lg" style={{ color: colors.text.secondary }}>Resolved</p>
+                <p className="text-3xl font-bold" style={{ color: colors.status.resolved }}>{stats.resolved}</p>
+              </div>
+              
+              {/* Pie Chart */}
+              <div className="col-span-1 md:col-span-4 h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => [`${value} issues`, 'Count']} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
 
-          <div className="input-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <motion.button
-            type="submit"
-            className="submit-btn"
-            disabled={isLoading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            {isLoading ? (
-              <motion.span
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                style={{ display: 'inline-block' }}
-              >
-                🔄
-              </motion.span>
+          {/* Issues List */}
+          <div className="flex flex-col gap-5">
+            {issues.length === 0 ? (
+              <p className="text-center text-xl" style={{ color: colors.text.secondary }}>No issues left. Great job, Officer! ✅</p>
             ) : (
-              <span>{activeTab === 'login' ? 'Login' : 'Sign Up'}</span>
+              issues.map((issue) => (
+                <div 
+                  key={issue._id} 
+                  className="p-6 rounded-xl transition-all duration-300 hover:-translate-y-1"
+                  style={{ 
+                    backgroundColor: colors.bg.card, 
+                    boxShadow: '0 0 15px rgba(56, 189, 248, 0.2)',
+                    borderLeft: `4px solid ${getStatusColor(issue.status)}`
+                  }}
+                >
+                  <h3 className="text-2xl mb-3" style={{ color: colors.text.title }}>{issue.title}</h3>
+                  <p className="mb-2" style={{ color: colors.text.secondary }}><strong>Reported By:</strong> {issue.reporterName}</p>
+                  <p className="mb-2" style={{ color: colors.text.secondary }}><strong>Email:</strong> {issue.reporterEmail}</p>
+                  <p className="mb-2" style={{ color: colors.text.secondary }}><strong>Description:</strong> {issue.description}</p>
+                  <p className="mb-4" style={{ color: colors.text.secondary }}>
+                    <strong>Status:</strong> <span style={{ color: getStatusColor(issue.status) }}>{issue.status}</span>
+                  </p>
+
+                  <div className="flex flex-wrap gap-3 items-center mt-4">
+                    <select
+                      value={issue.status}
+                      onChange={(e) => handleStatusChange(issue._id, e.target.value)}
+                      className="px-3 py-2 text-base rounded-lg focus:outline-none focus:ring-2"
+                      style={{ backgroundColor: colors.bg.accent, color: colors.text.primary, borderColor: colors.text.secondary }}
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Resolved">Resolved</option>
+                    </select>
+                    <button
+                      onClick={() => handleUpdateStatus(issue._id)}
+                      className="px-4 py-2 text-base rounded-lg transition-all duration-300"
+                      style={{ 
+                        backgroundColor: colors.button.primary, 
+                        color: colors.text.primary,
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = colors.button.hover}
+                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = colors.button.primary}
+                    >
+                      Update Status
+                    </button>
+                  </div>
+                </div>
+              ))
             )}
-          </motion.button>
-        </form>
-
-        <div className="divider">
-          <span>or</span>
+          </div>
         </div>
-
-        <div className="social-login">
-          <motion.button
-            className="social-btn google"
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <svg className="social-icon" viewBox="0 0 24 24">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-            </svg>
-            Continue with Google
-          </motion.button>
-        </div>
-      </motion.div>
+      )}
     </div>
   );
 };
 
-export default LoginPage;
+export default OfficerDashboard;

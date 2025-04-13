@@ -1,163 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import styled, { createGlobalStyle, ThemeProvider } from 'styled-components';
-import '@fortawesome/fontawesome-free/css/all.min.css';
+import { useState, useEffect } from 'react';
 
-// Theme definitions
-const themes = {
-  default: {
-    primary: '#4361ee',
-    secondary: '#3f37c9',
-    accent: '#4895ef',
-    light: '#f8f9fa',
-    dark: '#212529',
-    success: '#4cc9f0',
-    danger: '#f72585',
-    warning: '#f8961e',
-    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-  },
-  dark: {
-    primary: '#7209b7',
-    secondary: '#560bad',
-    accent: '#480ca8',
-    light: '#e5e5e5',
-    dark: '#14213d',
-    success: '#4cc9f0',
-    danger: '#ef233c',
-    warning: '#ff9e00',
-    background: 'linear-gradient(135deg, #14213d 0%, #000000 100%)',
-  },
-  nature: {
-    primary: '#2a9d8f',
-    secondary: '#264653',
-    accent: '#e9c46a',
-    light: '#f8f9fa',
-    dark: '#264653',
-    success: '#2a9d8f',
-    danger: '#e76f51',
-    warning: '#f4a261',
-    background: 'linear-gradient(135deg, #e9c46a 0%, #2a9d8f 100%)',
-  }
-};
-
-const GlobalStyle = createGlobalStyle`
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-  body {
-    background: ${(props) => props.theme.background};
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-`;
-
-const Container = styled(motion.div)`
-  position: relative;
-  z-index: 5;
-  width: 90%;
-  max-width: 1000px;
-  display: flex;
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 20px;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-  margin: 2rem auto;
-  @media (max-width: 768px) {
-    flex-direction: column;
-  }
-`;
-
-const LeftSection = styled.div`
-  flex: 1;
-  padding: 2rem;
-  background-color: ${(props) => props.theme.primary};
-  color: ${(props) => props.theme.light};
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-`;
-
-const RightSection = styled.div`
-  flex: 1;
-  padding: 2rem;
-  background-color: ${(props) => props.theme.light};
-  color: ${(props) => props.theme.dark};
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-`;
-
-const FormToggle = styled.button`
-  background: none;
-  border: none;
-  color: ${(props) => props.theme.accent};
-  font-weight: bold;
-  cursor: pointer;
-  margin: 0.5rem;
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 0.75rem;
-  margin: 0.5rem 0;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-`;
-
-const Button = styled.button`
-  background-color: ${(props) => props.theme.primary};
-  color: #fff;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-top: 1rem;
-  font-weight: bold;
-  &:hover {
-    background-color: ${(props) => props.theme.secondary};
-  }
-`;
-
-const FloatingIcon = styled(motion.i)`
-  position: absolute;
-  opacity: 0.2;
-  z-index: 0;
-`;
-
-const RoadComplaintsLogin = () => {
+export default function RoadComplaintsLogin() {
   const [activeForm, setActiveForm] = useState('officer');
-  const [activeAuthMode, setActiveAuthMode] = useState('login'); // 'login' or 'signup'
+  const [activeAuthMode, setActiveAuthMode] = useState('login');
   const [theme, setTheme] = useState('default');
   const [floatingIcons, setFloatingIcons] = useState([]);
 
-  useEffect(() => {
-    const icons = ['car', 'road', 'traffic-light', 'hard-hat', 'construction', 'sign', 'exclamation-triangle'];
-    const colors = ['#4361ee', '#3f37c9', '#4895ef', '#4cc9f0', '#f72585', '#f8961e', '#7209b7'];
+  // Theme configurations
+  const themes = {
+    default: {
+      primary: '#7e3af2',
+      secondary: '#6c2bd9',
+      accent: '#4c1d95',
+      light: '#f8f9fa',
+      dark: '#212529',
+      background: 'bg-gradient-to-br from-gray-900 to-black',
+      leftPanelBg: 'bg-white',
+      leftPanelText: 'text-gray-800',
+      rightPanelBg: 'bg-gradient-to-br from-purple-600 to-indigo-800',
+      rightPanelText: 'text-white',
+      buttonBg: 'bg-purple-600 hover:bg-purple-700',
+      buttonText: 'text-white',
+    }
+  };
 
-    const newIcons = Array.from({ length: 10 }, (_, i) => ({
+  // Generate floating icons for the background
+  useEffect(() => {
+    const icons = ['car', 'road', 'traffic-light', 'hard-hat', 'exclamation-triangle', 'map-marker-alt', 'tools'];
+    const newIcons = Array.from({ length: 8 }, (_, i) => ({
       id: i,
       icon: icons[Math.floor(Math.random() * icons.length)],
       top: Math.random() * 100,
       left: Math.random() * 100,
-      size: Math.random() * 20 + 10,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      delay: Math.random() * 10,
-      duration: Math.random() * 20 + 10
+      size: Math.random() * 16 + 16,
+      delay: Math.random() * 3,
+      duration: Math.random() * 10 + 15,
+      opacity: Math.random() * 0.15 + 0.05
     }));
-
     setFloatingIcons(newIcons);
   }, []);
-
-  const toggleForm = (form) => {
-    setActiveForm(form);
-  };
 
   const toggleAuthMode = () => {
     setActiveAuthMode(activeAuthMode === 'login' ? 'signup' : 'login');
@@ -167,57 +48,196 @@ const RoadComplaintsLogin = () => {
     alert(`${type} ${activeAuthMode} successful (demo)`);
   };
 
-  return (
-    <ThemeProvider theme={themes[theme]}>
-      <GlobalStyle />
+  const currentTheme = themes[theme];
 
+  return (
+    <div className={`min-h-screen w-full flex items-center justify-center p-4 ${currentTheme.background} relative overflow-hidden`}>
+      {/* Floating Background Icons */}
       {floatingIcons.map((icon) => (
-        <FloatingIcon
+        <div
           key={icon.id}
-          className={`fas fa-${icon.icon}`}
+          className="absolute z-0 text-gray-700"
           style={{
             top: `${icon.top}%`,
             left: `${icon.left}%`,
             fontSize: `${icon.size}px`,
-            color: icon.color,
+            opacity: icon.opacity,
+            animation: `float ${icon.duration}s ease-in-out ${icon.delay}s infinite alternate`,
           }}
-          animate={{
-            y: [0, -20, 0],
-          }}
-          transition={{
-            duration: icon.duration,
-            delay: icon.delay,
-            repeat: Infinity,
-            ease: 'easeInOut'
-          }}
-        />
+        >
+          <i className={`fas fa-${icon.icon}`}></i>
+        </div>
       ))}
 
-      <Container initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <LeftSection>
-          <h2>Welcome to RoadComplaints</h2>
-          <p>Choose your role to login</p>
-          <div>
-            <FormToggle onClick={() => toggleForm('officer')}>Officer</FormToggle>
-            <FormToggle onClick={() => toggleForm('citizen')}>Citizen</FormToggle>
+      {/* Main Card */}
+      <div className="w-full max-w-4xl bg-black bg-opacity-40 backdrop-filter backdrop-blur-lg p-6 rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden z-10">
+        {/* Left Side - Login Form */}
+        <div className={`md:w-1/2 p-6 ${currentTheme.leftPanelBg} ${currentTheme.leftPanelText} rounded-2xl shadow-lg transform transition-all duration-500`}>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold mb-4 text-center">
+              {activeAuthMode === 'login' ? 'Sign In' : 'Sign Up'}
+            </h2>
+            
+            {/* User Type Toggle */}
+            <div className="flex justify-center p-1 bg-gray-100 rounded-lg mb-6">
+              <button 
+                onClick={() => setActiveForm('officer')}
+                className={`py-2 px-4 rounded-md flex-1 transition-all duration-300 flex items-center justify-center ${activeForm === 'officer' 
+                  ? 'bg-purple-600 text-white shadow-md' 
+                  : 'text-gray-700 bg-transparent'}`}
+              >
+                <i className="fas fa-user-shield mr-2"></i>
+                Officer
+              </button>
+              <button 
+                onClick={() => setActiveForm('citizen')}
+                className={`py-2 px-4 rounded-md flex-1 transition-all duration-300 flex items-center justify-center ${activeForm === 'citizen' 
+                  ? 'bg-purple-600 text-white shadow-md' 
+                  : 'text-gray-700 bg-transparent'}`}
+              >
+                <i className="fas fa-user mr-2"></i>
+                Citizen
+              </button>
+            </div>
           </div>
-        </LeftSection>
-
-        <RightSection>
-          <h3>{activeForm === 'officer' ? 'Officer' : 'Citizen'} {activeAuthMode === 'login' ? 'Login' : 'Sign Up'}</h3>
-          <Input type="email" placeholder="Email" />
-          <Input type="password" placeholder="Password" />
-          {activeAuthMode === 'signup' && <Input type="text" placeholder="Full Name" />}
-          <Button onClick={() => handleAuth(activeForm)}>
-            {activeAuthMode === 'login' ? 'Login' : 'Sign Up'} as {activeForm.charAt(0).toUpperCase() + activeForm.slice(1)}
-          </Button>
-          <FormToggle onClick={toggleAuthMode}>
-            Switch to {activeAuthMode === 'login' ? 'Sign Up' : 'Login'}
-          </FormToggle>
-        </RightSection>
-      </Container>
-    </ThemeProvider>
+          
+          {/* Social Login */}
+          <div className="flex justify-center space-x-4 mb-4">
+            <button className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center transition hover:bg-gray-200">
+              <span className="text-gray-600 text-lg">G</span>
+            </button>
+            <button className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center transition hover:bg-gray-200">
+              <span className="text-gray-600 text-lg">f</span>
+            </button>
+            <button className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center transition hover:bg-gray-200">
+              <span className="text-gray-600 text-lg">in</span>
+            </button>
+          </div>
+          
+          <div className="text-center text-sm text-gray-500 mb-6">or use your email account</div>
+          
+          {/* Login Form */}
+          <form className="space-y-4">
+            <div className="input-box-animation">
+              <input 
+                type="text" 
+                placeholder="Email" 
+                className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-transparent focus:border-purple-500 focus:bg-white focus:outline-none transition-all duration-300" 
+              />
+            </div>
+            
+            <div className="input-box-animation">
+              <input 
+                type="password" 
+                placeholder="Password" 
+                className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-transparent focus:border-purple-500 focus:bg-white focus:outline-none transition-all duration-300" 
+              />
+            </div>
+            
+            {activeAuthMode === 'signup' && (
+              <div className="input-box-animation">
+                <input 
+                  type="text" 
+                  placeholder="Full Name" 
+                  className="w-full px-4 py-3 rounded-lg bg-gray-100 border border-transparent focus:border-purple-500 focus:bg-white focus:outline-none transition-all duration-300" 
+                />
+              </div>
+            )}
+            
+            <div className="flex justify-between items-center text-sm">
+              <div className="flex items-center">
+                <input type="checkbox" id="remember" className="mr-2" />
+                <label htmlFor="remember" className="text-gray-600">Remember me</label>
+              </div>
+              <a href="#" className="text-purple-600 hover:text-purple-700 transition-colors">Forgot Password?</a>
+            </div>
+            
+            <button 
+              type="button"
+              onClick={() => handleAuth(activeForm)}
+              className={`w-full ${currentTheme.buttonBg} ${currentTheme.buttonText} py-3 rounded-lg font-medium shadow-md transition-all duration-300 transform hover:-translate-y-1 btn-animation`}
+            >
+              {activeAuthMode === 'login' ? 
+                <><i className="fas fa-sign-in-alt mr-2"></i>Sign In as {activeForm.charAt(0).toUpperCase() + activeForm.slice(1)}</> : 
+                <><i className="fas fa-user-plus mr-2"></i>Sign Up as {activeForm.charAt(0).toUpperCase() + activeForm.slice(1)}</>
+              }
+            </button>
+          </form>
+        </div>
+        
+        {/* Right Side - Welcome Content */}
+        <div className={`md:ml-6 md:w-1/2 ${currentTheme.rightPanelBg} p-8 ${currentTheme.rightPanelText} flex flex-col justify-center items-center rounded-2xl`}>
+          <div className="text-center z-10">
+            <h2 className="text-3xl font-bold mb-4">
+              {activeAuthMode === 'login' ? 'Hello, Friend!' : 'Welcome Back!'}
+            </h2>
+            <p className="mb-8 text-purple-100">
+              {activeAuthMode === 'login' 
+                ? 'Register with your personal details to use all the features of Road Complaints portal'
+                : 'Sign in to access your account and continue your journey with us'
+              }
+            </p>
+            <button 
+              type="button"
+              onClick={toggleAuthMode}
+              className="border-2 border-white text-white bg-transparent py-2 px-8 rounded-full font-medium hover:bg-white hover:text-purple-700 transition-all duration-300 transform hover:-translate-y-1"
+            >
+              {activeAuthMode === 'login' ? 'SIGN UP' : 'SIGN IN'}
+            </button>
+          </div>
+          
+          {/* Background decorative elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -mr-16 -mt-16"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -ml-16 -mb-16"></div>
+        </div>
+      </div>
+      
+      {/* CSS Animations */}
+      <style jsx>{`
+        .input-box-animation {
+          opacity: 0;
+          animation: fadeInUp 0.5s forwards;
+        }
+        
+        .input-box-animation:nth-child(1) {
+          animation-delay: 0.1s;
+        }
+        
+        .input-box-animation:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+        
+        .input-box-animation:nth-child(3) {
+          animation-delay: 0.3s;
+        }
+        
+        .btn-animation {
+          opacity: 0;
+          animation: fadeInUp 0.5s forwards;
+          animation-delay: 0.4s;
+        }
+        
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes float {
+          0% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(5deg); }
+          100% { transform: translateY(-5px) rotate(-5deg); }
+        }
+        
+        input:focus {
+          box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+        }
+      `}</style>
+    </div>
   );
-};
-
-export default RoadComplaintsLogin;
+}
