@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, BarChart2, MapPin, Phone, Mail, Users, FileText, ArrowRight } from 'lucide-react';
-import RoadComplaintsLogin from './components/login.jsx';
-import { useNavigate } from 'react-router-dom';
-
-const navigate = useNavigate();
 
 export default function RoadCare() {
   const [isVisible, setIsVisible] = useState(false);
@@ -66,13 +62,9 @@ export default function RoadCare() {
             </button>
           </div>
           
-          <button 
-  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full shadow-md transition transform hover:scale-105"
-  onClick={() => navigate(<RoadComplaintsLogin/>)} // Use navigate function to redirect to the login page
->
-  Log In
-</button>
-
+          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full shadow-md transition transform hover:scale-105">
+            Log In
+          </button>
         </div>
       </nav>
       
