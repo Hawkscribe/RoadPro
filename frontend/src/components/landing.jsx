@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, BarChart2, MapPin, Phone, Mail, Users, FileText, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function RoadCare() {
   const [isVisible, setIsVisible] = useState(false);
   const [activeNavItem, setActiveNavItem] = useState('home');
   const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsVisible(true);
@@ -61,10 +63,13 @@ export default function RoadCare() {
               Contact
             </button>
           </div>
-          
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full shadow-md transition transform hover:scale-105">
+          <button 
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full shadow-md transition transform hover:scale-105"
+            onClick={() => navigate('/login')} // Redirect to login page
+          >
             Log In
           </button>
+
         </div>
       </nav>
       
