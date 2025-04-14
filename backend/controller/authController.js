@@ -1,82 +1,161 @@
-import bcrypt from 'bcryptjs';
+// controllers/authController.js
 import jwt from 'jsonwebtoken';
-import { UserModel } from '../models/userModel.js';
-import { OfficerModel } from '../models/officerModel.js';
+import { User } from '../models/User.js';
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const generateToken = (userId) => {
+  return jwt.sign(
+    { userId }, 
+    process.env.JWT_SECRET || 'default_secret_change_in_production', 
+    { expiresIn: '7d' }
+  );
+};
 
-// Sign up for User
 export const signupUser = async (req, res) => {
-  const { name, email, password } = req.body;
-  
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const { name, email, password } = req.body;
     
-    const newUser = new UserModel({ email, name, password: hashedPassword });
-    await newUser.save();
-
-    res.status(200).json({ msg: 'User has been registered' });
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+    
+    // Create new user
+    const user = new User({
+      name,
+      email,
+      password,
+      role: 'user'
+    });
+    
+    await user.save();
+    
+    // Generate token
+    const token = generateToken(user._id);
+    
+    res.status(201).json({
+      message: 'User created successfully',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (error) {
-    res.status(400).json({ msg: 'Error in registration', error: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// Sign in for User
 export const signinUser = async (req, res) => {
-  const { email, password } = req.body;
-
   try {
-    const user = await UserModel.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ msg: 'Invalid email or password' });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ msg: 'Invalid email or password' });
-    }
-
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
-  } catch (error) {
-    res.status(500).json({ msg: 'Error signing in', error: error.message });
-  }
-};
-
-// Sign up for Officer
-export const signupOfficer = async (req, res) => {
-  const { name, email, password } = req.body;
-  
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const { email, password } = req.body;
     
-    const newOfficer = new OfficerModel({ email, name, password: hashedPassword });
-    await newOfficer.save();
-
-    res.status(200).json({ msg: 'Officer has been registered' });
+    // Find user
+    const user = await User.findOne({ email, role: 'user' });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    // Check password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    // Generate token
+    const token = generateToken(user._id);
+    
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (error) {
-    res.status(400).json({ msg: 'Error in registration', error: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// Sign in for Officer
-export const signinOfficer = async (req, res) => {
-  const { email, password } = req.body;
-
+export const signupOfficer = async (req, res) => {
   try {
-    const officer = await OfficerModel.findOne({ email });
-    if (!officer) {
-      return res.status(401).json({ msg: 'Invalid email or password' });
+    const { name, email, password, secretCode } = req.body;
+    
+    // Verify officer secret code
+    const officerSecretCode = process.env.OFFICER_SECRET || 'officer123';
+    if (secretCode !== officerSecretCode) {
+      return res.status(401).json({ message: 'Invalid officer secret code' });
     }
-
-    const isPasswordValid = await bcrypt.compare(password, officer.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ msg: 'Invalid email or password' });
+    
+    // Check if officer already exists
+    const existingOfficer = await User.findOne({ email });
+    if (existingOfficer) {
+      return res.status(400).json({ message: 'Officer already exists' });
     }
-
-    const token = jwt.sign({ id: officer._id }, JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token });
+    
+    // Create new officer
+    const officer = new User({
+      name,
+      email,
+      password,
+      role: 'officer'
+    });
+    
+    await officer.save();
+    
+    // Generate token
+    const token = generateToken(officer._id);
+    
+    res.status(201).json({
+      message: 'Officer created successfully',
+      token,
+      user: {
+        id: officer._id,
+        name: officer.name,
+        email: officer.email,
+        role: officer.role
+      }
+    });
   } catch (error) {
-    res.status(500).json({ msg: 'Error signing in', error: error.message });
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const signinOfficer = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Find officer
+    const officer = await User.findOne({ email, role: 'officer' });
+    if (!officer) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    // Check password
+    const isMatch = await officer.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    
+    // Generate token
+    const token = generateToken(officer._id);
+    
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: officer._id,
+        name: officer.name,
+        email: officer.email,
+        role: officer.role
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

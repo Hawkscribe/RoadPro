@@ -1,3 +1,4 @@
+// routes/authRoutes.js
 import express from 'express';
 import { signupUser, signinUser, signupOfficer, signinOfficer } from '../controllers/authController.js';
 
