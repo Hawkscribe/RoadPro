@@ -1,0 +1,6 @@
+{
+    "watch": ["server.js", "routes", "models", "controllers"],
+    "ignore": ["node_modules", "env", ".git"],
+    "ext": "js,json"
+  }
+  

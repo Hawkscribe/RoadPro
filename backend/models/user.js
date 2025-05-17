@@ -47,4 +47,5 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-export const User = mongoose.model('User', userSchema);
+// ✅ Prevent OverwriteModelError during development
+export const User = mongoose.models.User || mongoose.model('User', userSchema);

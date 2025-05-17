@@ -1,17 +1,14 @@
-// controllers/officerController.js
-import { Post } from '../models/Post.js';
+import Post from '../models/post.js';  // Corrected import
 
 export const getAllPosts = async (req, res) => {
   try {
-    // Check if the user is an officer
     if (req.user.role !== 'officer') {
       return res.status(403).json({ message: 'Unauthorized: Only officers can access this resource' });
     }
 
-    // Get all posts, sorted by newest first
     const posts = await Post.find()
       .sort({ createdAt: -1 })
-      .populate('userId', 'name email') // Populate user information
+      .populate('userId', 'name email')
       .exec();
 
     res.json(posts);
@@ -23,7 +20,6 @@ export const getAllPosts = async (req, res) => {
 
 export const updatePostStatus = async (req, res) => {
   try {
-    // Check if the user is an officer
     if (req.user.role !== 'officer') {
       return res.status(403).json({ message: 'Unauthorized: Only officers can update post status' });
     }
@@ -34,13 +30,11 @@ export const updatePostStatus = async (req, res) => {
       return res.status(400).json({ message: 'Post ID and status are required' });
     }
 
-    // Valid status values
     const validStatus = ['pending', 'approved', 'rejected', 'in-progress', 'completed'];
     if (!validStatus.includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }
 
-    // Update the post status
     const updatedPost = await Post.findByIdAndUpdate(
       postId,
       { 

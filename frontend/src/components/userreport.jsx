@@ -1,205 +1,318 @@
-import React, { useState, useRef } from 'react';
-import Webcam from 'react-webcam';
+import React, { useState, useRef } from "react";
+import { Camera, Upload, MapPin, ChevronDown, Send, Image as ImageIcon } from "lucide-react";
 
-const RoadIssueReporter = () => {
-  const webcamRef = useRef(null);
+const ReportForm = () => {
   const [image, setImage] = useState(null);
-  const [issueType, setIssueType] = useState('');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState("");
+  const [issueType, setIssueType] = useState("Pothole");
   const [location, setLocation] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
 
-  const capture = () => {
-    const screenshot = webcamRef.current.getScreenshot();
-    setImage(screenshot);
+  const issueTypes = [
+    { value: "Pothole", label: "Pothole", color: "bg-red-500" },
+    { value: "Crack", label: "Road Crack", color: "bg-orange-500" },
+    { value: "Drainage", label: "Drainage Issue", color: "bg-blue-500" },
+    { value: "Debris", label: "Road Debris", color: "bg-yellow-500" },
+    { value: "Signage", label: "Damaged Signage", color: "bg-purple-500" },
+    { value: "Other", label: "Other Issue", color: "bg-gray-500" }
+  ];
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImage(reader.result);
+        setIsCapturing(false);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const getLocation = () => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        };
-        setLocation(coords);
-      },
-      (err) => {
-        console.error('Geolocation error:', err);
-        alert('Unable to fetch location.');
+  const handleCameraCapture = async () => {
+    setIsCapturing(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
       }
-    );
+    } catch (err) {
+      console.error("Error accessing camera:", err);
+      alert("Unable to access camera. Please check your permissions.");
+      setIsCapturing(false);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    
+    if (video && canvas) {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const imageData = canvas.toDataURL('image/png');
+      setImage(imageData);
+      
+      // Stop the camera stream
+      const stream = video.srcObject;
+      if (stream) {
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+      }
+      
+      setIsCapturing(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!image || !issueType || !description || !location) {
-      alert('Please fill out all fields and capture an image.');
+
+    if (!image || !description || !location) {
+      alert("Please fill all fields and allow location access.");
       return;
     }
 
     const newPost = {
       image,
-      issueType,
       description,
+      issueType,
       location,
-      timestamp: new Date().toISOString(),
+      time: new Date().toLocaleString()
     };
 
-    setPosts([newPost, ...posts]);
+    // Add post to the list
+    setPosts((prev) => [newPost, ...prev]);
+
+    // Clear form
     setImage(null);
-    setDescription('');
-    setIssueType('');
+    setDescription("");
+    setIssueType("Pothole");
+  };
+
+  const getLocation = () => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ latitude, longitude });
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        alert("Unable to access location. Please allow location access.");
+      }
+    );
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8 bg-[url('https://images.unsplash.com/photo-1520262454473-a1a82276a574?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80')] bg-fixed bg-cover bg-opacity-30">
-      <div className="max-w-4xl mx-auto">
-        <div className="backdrop-blur-sm bg-white/80 rounded-3xl shadow-xl overflow-hidden">
-          <div className="px-6 py-10 sm:px-10">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-2">Road Issue Reporter</h1>
-              <p className="text-gray-600 text-lg">Report road problems in your community</p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="bg-gradient-to-r from-blue-100 to-purple-100 p-1 rounded-2xl">
-                <div className="bg-white rounded-xl p-4">
-                  <div className="flex justify-center mb-4">
-                    {!image ? (
-                      <div className="rounded-2xl overflow-hidden shadow-lg border-4 border-indigo-100">
-                        <Webcam
-                          audio={false}
-                          height={300}
-                          ref={webcamRef}
-                          screenshotFormat="image/jpeg"
-                          width={400}
-                          videoConstraints={{ facingMode: "environment" }}
-                          className="object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl overflow-hidden shadow-lg border-4 border-indigo-100">
-                        <img 
-                          src={image} 
-                          alt="Captured" 
-                          width={400} 
-                          height={300} 
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
+    <div className="max-w-4xl mx-auto bg-gray-50 min-h-screen">
+      <div className="bg-blue-600 text-white py-6 px-4 shadow-lg">
+        <h1 className="text-2xl font-bold text-center">Road Issue Reporter</h1>
+        <p className="text-center text-blue-100">Help improve your community by reporting road issues</p>
+      </div>
+      
+      <div className="p-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-xl font-bold mb-6 text-gray-800 border-b pb-2">
+            New Report
+          </h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {!isCapturing ? (
+              <div className="space-y-4">
+                {!image ? (
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="grid grid-cols-2 gap-4 w-full">
+                      <button
+                        type="button"
+                        onClick={handleCameraCapture}
+                        className="flex items-center justify-center space-x-2 bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg transition duration-200"
+                      >
+                        <Camera size={20} />
+                        <span>Take Photo</span>
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={triggerFileInput}
+                        className="flex items-center justify-center space-x-2 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 px-4 rounded-lg transition duration-200"
+                      >
+                        <Upload size={20} />
+                        <span>Upload Image</span>
+                      </button>
+                    </div>
+                    
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 w-full flex flex-col items-center justify-center text-gray-500">
+                      <ImageIcon size={48} className="mb-2 text-gray-400" />
+                      <p>No image selected</p>
+                      <p className="text-sm">Take or upload a clear photo of the issue</p>
+                    </div>
                   </div>
-
-                  <div className="flex justify-center">
+                ) : (
+                  <div className="relative">
+                    <img
+                      src={image}
+                      alt="Selected issue"
+                      className="w-full h-64 object-cover rounded-lg"
+                    />
                     <button
                       type="button"
-                      onClick={capture}
-                      className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-xl shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-200 flex items-center"
+                      onClick={() => setImage(null)}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full w-8 h-8 flex items-center justify-center"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                      </svg>
-                      {image ? 'Retake Photo' : 'Capture Photo'}
+                      ×
                     </button>
                   </div>
-                </div>
+                )}
               </div>
-
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 ml-1">Issue Type</label>
-                  <select
-                    value={issueType}
-                    onChange={(e) => setIssueType(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all duration-200"
-                  >
-                    <option value="">Select Issue Type</option>
-                    <option value="Pothole">Pothole</option>
-                    <option value="Blocked Drain">Blocked Drain</option>
-                    <option value="Broken Light">Broken Light</option>
-                    <option value="Fallen Tree">Fallen Tree</option>
-                    <option value="Road Damage">Road Damage</option>
-                    <option value="Traffic Signal Issue">Traffic Signal Issue</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 ml-1">Location</label>
+            ) : (
+              <div className="space-y-4">
+                <div className="relative">
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
                   <button
                     type="button"
-                    onClick={getLocation}
-                    className={`w-full px-4 py-3 rounded-xl border ${location ? 'bg-green-50 border-green-200 text-green-700' : 'bg-gray-50 border-gray-200 text-gray-700'} flex items-center justify-center focus:ring-2 focus:ring-indigo-200 hover:bg-gray-100 transition-all duration-200`}
+                    onClick={capturePhoto}
+                    className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white p-2 rounded-full w-14 h-14 flex items-center justify-center border-4 border-white"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                    </svg>
-                    {location ? 'Location Captured' : 'Get Current Location'}
+                    <Camera size={24} />
                   </button>
+                  <canvas ref={canvasRef} style={{ display: 'none' }} />
                 </div>
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 ml-1">Issue Description</label>
-                <textarea
-                  placeholder="Describe the issue in detail..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 transition-all duration-200 h-32"
-                />
+            <div className="relative">
+              <label className="block mb-2 font-medium text-gray-700">Issue Type</label>
+              <div 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white flex justify-between items-center cursor-pointer"
+                onClick={() => setShowDropdown(!showDropdown)}
+              >
+                <div className="flex items-center space-x-2">
+                  <span className={`w-3 h-3 rounded-full ${issueTypes.find(type => type.value === issueType)?.color || 'bg-gray-500'}`}></span>
+                  <span>{issueTypes.find(type => type.value === issueType)?.label || issueType}</span>
+                </div>
+                <ChevronDown size={20} className={`transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
               </div>
+              
+              {showDropdown && (
+                <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg py-1">
+                  {issueTypes.map((type) => (
+                    <div
+                      key={type.value}
+                      className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => {
+                        setIssueType(type.value);
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <span className={`w-3 h-3 rounded-full ${type.color}`}></span>
+                      <span>{type.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-              <div className="flex justify-center">
-                <button
-                  type="submit"
-                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
-                >
-                  Submit Report
-                </button>
-              </div>
-            </form>
-          </div>
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows="3"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Describe the issue in detail..."
+              ></textarea>
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium text-gray-700">Location</label>
+              <button
+                type="button"
+                onClick={getLocation}
+                className="w-full flex items-center justify-center space-x-2 bg-indigo-500 hover:bg-indigo-600 text-white py-3 px-4 rounded-lg transition duration-200"
+              >
+                <MapPin size={20} />
+                <span>{location ? "Update Location" : "Get Current Location"}</span>
+              </button>
+              {location && (
+                <div className="mt-2 bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="flex items-center text-green-700">
+                    <MapPin size={16} className="mr-2" />
+                    <p className="text-sm">
+                      {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center space-x-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
+            >
+              <Send size={20} />
+              <span>Submit Report</span>
+            </button>
+          </form>
         </div>
 
         {posts.length > 0 && (
-          <div className="mt-12 backdrop-blur-sm bg-white/80 rounded-3xl shadow-xl overflow-hidden">
-            <div className="px-6 py-8 sm:px-10">
-              <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 mb-6 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                Your Reports
-              </h2>
-
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {posts.map((post, idx) => (
-                  <div key={idx} className="bg-white rounded-2xl shadow-md overflow-hidden transform transition-all duration-300 hover:-translate-y-2 hover:shadow-lg">
-                    <div className="relative h-48">
-                      <img src={post.image} alt="Issue" className="w-full h-full object-cover" />
-                      <div className="absolute top-0 right-0 bg-white/80 backdrop-blur-sm rounded-bl-lg px-2 py-1">
-                        <span className="text-xs font-medium text-indigo-700">{post.issueType}</span>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm text-gray-600 mb-2">{post.description}</p>
-                      <div className="flex items-center text-xs text-gray-500 mt-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span className="truncate">
-                          {post.location.lat.toFixed(4)}, {post.location.lng.toFixed(4)}
-                        </span>
-                      </div>
-                      <div className="flex items-center text-xs text-gray-500 mt-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>{new Date(post.timestamp).toLocaleString()}</span>
-                      </div>
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-xl font-bold mb-6 text-gray-800 border-b pb-2">Recent Reports</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {posts.map((post, index) => (
+                <div
+                  key={index}
+                  className="border border-gray-200 rounded-lg overflow-hidden shadow-md bg-white hover:shadow-lg transition-shadow duration-200"
+                >
+                  <div className="relative h-48">
+                    <img
+                      src={post.image}
+                      alt="Reported issue"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-0 right-0 m-2">
+                      <span className={`px-2 py-1 text-xs font-semibold text-white rounded-full ${
+                        issueTypes.find(type => type.value === post.issueType)?.color || 'bg-gray-500'
+                      }`}>
+                        {post.issueType}
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="p-4">
+                    <p className="text-gray-800 mb-2 line-clamp-2">{post.description}</p>
+                    <div className="flex items-center text-gray-600 text-sm mt-2">
+                      <MapPin size={14} className="mr-1" />
+                      <span className="truncate">
+                        {post.location.latitude.toFixed(4)}, {post.location.longitude.toFixed(4)}
+                      </span>
+                    </div>
+                    <p className="text-gray-500 text-xs mt-2">{post.time}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -208,4 +321,4 @@ const RoadIssueReporter = () => {
   );
 };
 
-export default RoadIssueReporter;
+export default ReportForm;

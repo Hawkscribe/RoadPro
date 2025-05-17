@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ react-router-dom
+import { useNavigate } from 'react-router-dom';
 
 export default function RoadComplaintsLogin() {
   const [activeForm, setActiveForm] = useState('officer');
   const [activeAuthMode, setActiveAuthMode] = useState('login');
   const [theme, setTheme] = useState('default');
   const [floatingIcons, setFloatingIcons] = useState([]);
-  const navigate = useNavigate(); // ✅ replaced useRouter
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const navigate = useNavigate();
 
   const themes = {
     default: {
@@ -42,11 +45,7 @@ export default function RoadComplaintsLogin() {
 
   const handleAuth = (type) => {
     if (activeAuthMode === 'login') {
-      if (type === 'citizen') {
-        navigate('/user'); // ✅ using navigate
-      } else {
-        navigate('/officer'); // ✅ using navigate
-      }
+      navigate(type === 'citizen' ? '/user' : '/officer');
     } else {
       alert(`${type} signup successful`);
     }
@@ -56,7 +55,7 @@ export default function RoadComplaintsLogin() {
 
   return (
     <div className={`min-h-screen w-full flex items-center justify-center p-4 ${currentTheme.background} relative overflow-hidden`}>
-      {/* Floating icons */}
+      {/* Floating Icons */}
       {floatingIcons.map((icon) => (
         <div
           key={icon.id}
@@ -75,7 +74,7 @@ export default function RoadComplaintsLogin() {
 
       {/* Card */}
       <div className="w-full max-w-4xl bg-black bg-opacity-40 backdrop-blur-md p-6 rounded-3xl shadow-2xl flex flex-col md:flex-row z-10">
-        {/* Left */}
+        {/* Left Panel */}
         <div className={`md:w-1/2 p-6 ${currentTheme.leftPanelBg} ${currentTheme.leftPanelText} rounded-2xl`}>
           <h2 className="text-2xl font-bold mb-4 text-center">
             {activeAuthMode === 'login' ? 'Sign In' : 'Sign Up'}
@@ -98,19 +97,25 @@ export default function RoadComplaintsLogin() {
 
           <form className="space-y-4">
             <input
-              type="text"
+              type="email"
               placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 rounded-lg bg-gray-100 focus:outline-none"
             />
             <input
               type="password"
               placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-lg bg-gray-100 focus:outline-none"
             />
             {activeAuthMode === 'signup' && (
               <input
                 type="text"
                 placeholder="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg bg-gray-100 focus:outline-none"
               />
             )}
@@ -125,7 +130,7 @@ export default function RoadComplaintsLogin() {
           </form>
         </div>
 
-        {/* Right */}
+        {/* Right Panel */}
         <div className={`md:ml-6 md:w-1/2 ${currentTheme.rightPanelBg} p-8 ${currentTheme.rightPanelText} flex flex-col justify-center items-center rounded-2xl`}>
           <h2 className="text-3xl font-bold mb-4">
             {activeAuthMode === 'login' ? 'Hello, Friend!' : 'Welcome Back!'}
@@ -148,12 +153,12 @@ export default function RoadComplaintsLogin() {
       {/* Animations */}
       <style>
         {`
-        @keyframes float {
-          0% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(5deg); }
-          100% { transform: translateY(-5px) rotate(-5deg); }
-        }
-        `}
+          @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(5deg); }
+            100% { transform: translateY(-5px) rotate(-5deg); }
+          }
+        `} 
       </style>
     </div>
   );
