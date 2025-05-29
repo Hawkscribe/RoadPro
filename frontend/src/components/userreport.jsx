@@ -1,7 +1,8 @@
-import React, { useState, useRef } from "react";
-import { Camera, Upload, MapPin, ChevronDown, Send, Image as ImageIcon } from "lucide-react";
-
+import React, { useState, useRef, useEffect } from "react";
+import { Camera, Upload, MapPin, ChevronDown, Send, ImageIcon, LogOut, User } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 const ReportForm = () => {
+  const navigate=useNavigate();
   const [image, setImage] = useState(null);
   const [description, setDescription] = useState("");
   const [issueType, setIssueType] = useState("Pothole");
@@ -9,6 +10,9 @@ const ReportForm = () => {
   const [posts, setPosts] = useState([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true); // Simulate logged in state
+  const [user, setUser] = useState(null); // Mock user data
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -21,6 +25,76 @@ const ReportForm = () => {
     { value: "Signage", label: "Damaged Signage", color: "bg-purple-500" },
     { value: "Other", label: "Other Issue", color: "bg-gray-500" }
   ];
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem("token"); // or sessionStorage
+        if (!token) {
+          alert("No token found. Please log in.");
+          return;
+        }
+  
+        const res = await fetch("http://localhost:8000/api/auth/user", {
+          method: "POST", // or "GET" — depends on your backend
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token, // 👈 Sending raw token (not Bearer)
+          },
+        });
+  
+        const data = await res.json();
+        if (res.ok) {
+          setUser(data.user);
+        } else {
+          alert(data.message || "Login data is invalid");
+        }
+      } catch (error) {
+        console.error("Fetch user failed:", error);
+        alert("Error fetching user data.");
+      }
+    };
+  
+    fetchUserData();
+  }, []);
+  
+  
+  const handleLogout = async () => {
+    try {
+      // Call logout API endpoint
+      const response = await fetch("http://localhost:8000/api/auth/logout/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        
+        },
+      });
+
+      if (response.ok) {
+        // Clear user data and authentication state
+        setIsLoggedIn(false);
+        setUser(null);
+        setPosts([]);
+        setImage(null);
+        setDescription("");
+        setIssueType("Pothole");
+        setLocation(null);
+        setShowUserMenu(false);
+        
+        // Clear any stored tokens (uncomment when using real authentication)
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('token');
+        
+        alert("Logged out successfully!");
+        navigate("/login");
+      } else {
+        console.error("Logout failed");
+        alert("Logout failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      alert("An error occurred during logout.");
+    }
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -74,29 +148,52 @@ const ReportForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!image || !description || !location) {
       alert("Please fill all fields and allow location access.");
       return;
     }
-
-    const newPost = {
-      image,
-      description,
-      issueType,
-      location,
-      time: new Date().toLocaleString()
-    };
-
-    // Add post to the list
-    setPosts((prev) => [newPost, ...prev]);
-
-    // Clear form
-    setImage(null);
-    setDescription("");
-    setIssueType("Pothole");
+  
+    try {
+      const formData = new FormData();
+  
+      // Convert dataURL to Blob
+      const res = await fetch(image);
+      const blob = await res.blob();
+      const filename = `issue_${Date.now()}.png`;
+  
+      formData.append("image", blob, filename);
+      formData.append("description", description);
+      formData.append("issueType", issueType);
+      formData.append("latitude", location.latitude);
+      formData.append("longitude", location.longitude);
+  
+      const response = await fetch("http://localhost:8000/api/posts/create", {
+        method: "POST",
+        body: formData,
+        headers: {
+          // Include token if needed
+          // "Authorization": `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok) {
+        setPosts((prev) => [data.post, ...prev]);
+        setImage(null);
+        setDescription("");
+        setIssueType("Pothole");
+      } else {
+        console.error("Failed to submit post:", data);
+        alert(data.message || "Something went wrong.");
+      }
+    } catch (error) {
+      console.error("Submit error:", error);
+      alert("An error occurred while submitting the report.");
+    }
   };
-
+  
   const getLocation = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -114,11 +211,63 @@ const ReportForm = () => {
     fileInputRef.current?.click();
   };
 
+  // Show login screen if not logged in
+  if (!isLoggedIn) {
+    return (
+      <div className="max-w-md mx-auto bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 w-full mx-4">
+          <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">Road Issue Reporter</h1>
+          <p className="text-center text-gray-600 mb-6">Please log in to continue</p>
+          <button
+            onClick={() => {
+              setIsLoggedIn(true);
+              setUser({ name: "John Doe", email: "john@example.com" });
+            }}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
+          >
+            Login (Demo)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto bg-gray-50 min-h-screen">
       <div className="bg-blue-600 text-white py-6 px-4 shadow-lg">
-        <h1 className="text-2xl font-bold text-center">Road Issue Reporter</h1>
-        <p className="text-center text-blue-100">Help improve your community by reporting road issues</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold">Road Issue Reporter</h1>
+            <p className="text-blue-100">Help improve your community by reporting road issues</p>
+          </div>
+          
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center space-x-2 bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg transition duration-200"
+            >
+              <User size={20} />
+              <span className="hidden sm:inline">{user?.name || "User"}</span>
+              <ChevronDown size={16} className={`transition-transform duration-200 ${showUserMenu ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50">
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <p className="font-medium text-gray-800">{user?.name}</p>
+                  <p className="text-sm text-gray-600">{user?.email}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center space-x-2 px-4 py-2 text-left hover:bg-red-50 text-red-600 transition duration-200"
+                >
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       
       <div className="p-6">

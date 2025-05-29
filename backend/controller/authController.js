@@ -1,6 +1,7 @@
 // controllers/authController.js
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
+import { application } from 'express';
 
 const generateToken = (userId) => {
   return jwt.sign(
@@ -47,26 +48,30 @@ export const signupUser = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
 export const signinUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+
     
+    // Check if body is parsed
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
     // Find user
     const user = await User.findOne({ email, role: 'user' });
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'User not found' });
     }
-    
-    // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+
+    // Check password directly (no bcrypt)
+    if (user.password !== password) {
+      return res.status(401).json({ message: 'Incorrect password' });
     }
-    
+
     // Generate token
     const token = generateToken(user._id);
-    
+
     res.json({
       message: 'Login successful',
       token,
@@ -81,6 +86,7 @@ export const signinUser = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 export const signupOfficer = async (req, res) => {
   try {
@@ -157,5 +163,34 @@ export const signinOfficer = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+export const logoutUser=async (req,res)=>{
+res.clearCookie('token');
+res.status(200).json({message:"LoggedOut sucessfully"});
+
+};
+
+
+export const userInfo = async (req, res) => {
+  const token = req.headers.authorization; 
+
+  if (!token) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error("Token verification error:", error.message);
+    res.status(401).json({ message: "Invalid token" });
   }
 };

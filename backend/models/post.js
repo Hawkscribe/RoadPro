@@ -1,12 +1,17 @@
-const express = require("express");
-const multer = require("multer");
-const { spawn } = require("child_process");
-const path = require("path");
-const fs = require("fs");
+// routes/post.js
+import express from "express";
+import multer from "multer";
+import { spawn } from "child_process";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Setup multer for image uploads
+// Multer storage config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/"),
   filename: (req, file, cb) =>
@@ -43,7 +48,6 @@ router.post("/", upload.single("image"), async (req, res) => {
 
       const result = JSON.parse(pythonOutput);
 
-      // Return image URL (assuming static file serving setup)
       res.json({
         ...result,
         annotatedImage: `/annotated/${outputFilename}`,
@@ -55,4 +59,5 @@ router.post("/", upload.single("image"), async (req, res) => {
   }
 });
 
-module.exports = router;
+// ✅ Correct ES module export
+export default router;
